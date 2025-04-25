@@ -120,7 +120,7 @@ retia@localhost:~/practice_ws/src$ ros2 node list
 이러한 클래스가 아직 구현된 기능은 하나도 없지만, 매우 기본적인 Node의 형태다.
 </details>
 
-## 01. 메세지 보내기기
+## 01. 메세지 보내기
 
 [Send Message Code](01_send_data_code.py)
 
@@ -212,4 +212,107 @@ data: 여러분!! 모두 안녕하세요!!
 data: 여러분!! 모두 안녕하세요!!
 ---
 ```
+</details>
+
+
+## 02. 메세지 받기기
+
+[Send Message Code](02_receive_data_code.py)
+
+```python
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class BaseNode(Node):
+    def __init__(self):
+        super().__init__("receive_data_node")
+        
+        ## ===== 추가  =====================================================
+        self.subscriber = self.create_subscription(String, "send_data", self.subscriber_callback, 10)
+        ## ================================================================
+        
+        self.get_logger().info("✅ 초기화 성공!!")
+    
+    def subscriber_callback(self, msg):
+        self.get_logger().info(f"📨 메세지 수신! : {msg.data}")
+        
+
+def main():
+    rclpy.init()
+    base_node = BaseNode()
+    try:
+        rclpy.spin(base_node)
+    except KeyboardInterrupt:
+        print(" <--- ✅ 사용자 입력으로 인한 프로그램 종료")
+    finally:
+        base_node.destroy_node()
+        rclpy.try_shutdown()
+    
+
+if __name__ == "__main__":
+    main()
+```
+
+<details>
+
+<summary>코드 설명</summary>
+이번에는 메시지를 받는 코드를 만들어 본다. 먼저 해당 노드의 이름을 `receive_data_node`로 수정을 해 주자.   
+
+[Send Message Code](01_send_data_code.py)에서 보낸 코드를 받기 위해서는 해당 메시지의 타입과 제목을 알면 된다. 타입의 경우 `String`이였고, 제목의 경우 `send_data`였다. 해당 요소를 `self.create_subscription`에 넣어서 메시지를 받을 수 있다. 해당 메시지가 도착할 때 마다 실행할 함수는 `self.subscriber_callback`으로 선언을 해 줄 수 있다.  
+
+아까 왜인지는 알 수 없지만, 우리가 전송을 원하는 데이터의 경우 `msg.data`에 저장했던 것을 기억할 수 있다. 이번에는 반대로 `msg.data`에서 데이터를 꺼내면 된다. 수신 확인을 위해 `self.get_logger().info()`를 사용해서 출력한다.  
+
+그 결과 다음과 같이 출력되는 것을 확인할 수 있다.
+
+```bash
+retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 02_receive_data_code.py 
+[INFO] [1745594455.345600841] [receive_data_node]: ✅ 초기화 성공!!
+[INFO] [1745594455.756395387] [receive_data_node]: 📨 메세지 수신! : 여러분!! 모두 안녕하세요!!
+[INFO] [1745594456.756405630] [receive_data_node]: 📨 메세지 수신! : 여러분!! 모두 안녕하세요!!
+[INFO] [1745594457.756394909] [receive_data_node]: 📨 메세지 수신! : 여러분!! 모두 안녕하세요!!
+```
+</details>
+
+
+
+
+
+
+
+
+
+## 03.
+
+[Send Message Code](01_send_data_code.py)
+
+```python
+
+```
+
+<details>
+
+<summary>코드 설명</summary>
+
+</details>
+
+
+
+
+
+
+
+
+## 04.
+
+[Send Message Code](01_send_data_code.py)
+
+```python
+
+```
+
+<details>
+
+<summary>코드 설명</summary>
+
 </details>
