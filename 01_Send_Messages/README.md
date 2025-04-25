@@ -367,13 +367,7 @@ retia@localhost:~/practice_ws/src/practice_ros$ ros2 service list
 </details>
 
 
-
-
-
-
-
-
-## 04. 답장을 받는 메세지 보내기기
+## 04. 답장을 받는 메세지 보내기
 
 [Send Message Code](01_send_data_code.py)
 
@@ -468,9 +462,9 @@ retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 04_send
 
 
 
-## 05.
+## 05. 중간 보고를 보내며 답장을 받는 메세지 받기
 
-[Send Message Code](01_send_data_code.py)
+[Receive Message Code](05_receive_data_and_answer_shile_report%202.py)
 
 ```python
 
@@ -485,9 +479,9 @@ retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 04_send
 
 
 
-## 06.
+## 06. 중간 보고를 보내며 답장을 받는 메세지 보내기
 
-[Send Message Code](01_send_data_code.py)
+[Send Message Code](06_send_data_and_answer_while_report.py)
 
 ```python
 
