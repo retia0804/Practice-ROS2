@@ -215,7 +215,7 @@ data: 여러분!! 모두 안녕하세요!!
 </details>
 
 
-## 02. 메세지 받기기
+## 02. 메세지 받기
 
 [Send Message Code](02_receive_data_code.py)
 
@@ -282,7 +282,193 @@ retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 02_rece
 
 
 
-## 03.
+## 03. 답장을 받는 메세지 받기
+
+[Send Message and Answer Code](03_recieve_data_and_answer.py)
+
+```python
+import time
+
+import rclpy
+from rclpy.node import Node
+from std_srvs.srv import Trigger
+
+class BaseNode(Node):
+    def __init__(self):
+        super().__init__("receive_data_and_answer_node")
+        
+        ## ===== 추가  =====================================================
+        self.service_server = self.create_service(Trigger, "send_data_and_answer", self.service_callback)
+        ## ================================================================
+        
+        self.get_logger().info("✅ 초기화 성공!!")
+    
+    def service_callback(self, request, response):
+        response.success = True
+        response.message = "서비스 작업 완료!!"
+        
+        self.get_logger().info(f"🖨️ 서비스 작업 시작!!")
+        self.get_logger().info(f"📄 서비스 작업 중... (1/3)")
+        time.sleep(0.5)
+        
+        self.get_logger().info(f"📄 서비스 작업 중... (2/3)")
+        time.sleep(0.5)
+        
+        self.get_logger().info(f"📄 서비스 작업 중... (3/3)")
+        self.get_logger().info(f"📨 서비스 작업 완료!!")
+        
+        return response
+        
+
+def main():
+    rclpy.init()
+    base_node = BaseNode()
+    try:
+        rclpy.spin(base_node)
+    except KeyboardInterrupt:
+        print(" <--- ✅ 사용자 입력으로 인한 프로그램 종료")
+    finally:
+        base_node.destroy_node()
+        rclpy.try_shutdown()
+    
+
+if __name__ == "__main__":
+    main()
+```
+
+<details>
+
+<summary>코드 설명</summary>
+이번에는 답장이 오기를 기대하는 메세지를 활용해 보자. 그 중 받는 입장을 먼저 구현한다. 그래서서 노드 이름을 `receive_data_and_answer_node`으로 지정한다.  
+
+해당 내용은 사실상 이전 두 단계의 합이라고 볼 수도 있다. 먼저 데이터를 보낼 때 고려했던 데이터 타입 `Trigger`과 메시지 제목 `"send_data_and_answer"`, 그리고 메시지를 받았을 때 수행할 동작 `self.service_callback`으로 구성된다.  
+
+`service_callback`의 인자를 보면 `request`와 `response`이 있다. 해당 요소 중 `request`의 경우 다른 사람이 보낸 데이터를 이곳에 저장되어 있다. 그래서 함수 내부에서 해당 데이터를 활용해서 여러가지를 수행하면 된다. `response`의 경우에는 우리가 보낼 데이터이다. 그래서 우리가 해당 요소에 데이터를 할당 해서 `return`을 통해 다시 데이터를 보낸 쪽으로 전송을 해 주면 된다.  
+
+해당 코드를 실행해 보면, 아직은 우리한테 메시지를 보내는 곳이 없기 때문에 진행되지 않는다.
+
+```bash
+retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 03_send_data_and_answer.py 
+[INFO] [1745595554.275620436] [send_data_node]: ✅ 초기화 성공!!
+```
+
+하지만 이러한 서비스 목록을 확인 해 보면 해당 메시지가 목록에 추가 된 것을 확인할 수 있다. 해당 요소 중에서 `/send_data_node`로 시작되는 것들은 Node를 시작할 때 기본적으로 생성되는 것이므로 무시해도 된다. 그것 말고, `/send_data_and_answer`가 추가된 것을 확인해 볼 수 있다.
+
+```bash
+retia@localhost:~/practice_ws/src/practice_ros$ ros2 service list
+/send_data_and_answer
+/send_data_node/describe_parameters
+/send_data_node/get_parameter_types
+/send_data_node/get_parameters
+/send_data_node/list_parameters
+/send_data_node/set_parameters
+/send_data_node/set_parameters_atomically
+```
+</details>
+
+
+
+
+
+
+
+
+## 04. 답장을 받는 메세지 보내기기
+
+[Send Message Code](01_send_data_code.py)
+
+```python
+import time
+
+import rclpy
+from rclpy.node import Node
+from std_srvs.srv import Trigger
+
+class BaseNode(Node):
+    def __init__(self):
+        super().__init__("send_data_and_answer_node")
+        
+        ## ===== 추가  =====================================================
+        self.service_client = self.create_client(Trigger, "send_data_and_answer")
+        while not self.service_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("🔄 서비스 준비 중...")
+        ## ================================================================
+        
+        self.get_logger().info("✅ 초기화 성공!!")
+    
+    def send_msg(self):
+        msg = Trigger.Request()
+        self.future = self.service_client.call_async(msg)
+
+def main():
+    rclpy.init()
+    base_node = BaseNode()
+    base_node.send_msg()
+    try:
+        rclpy.spin_until_future_complete(base_node, base_node.future)
+        result = base_node.future.result()
+        base_node.get_logger().info(f"📨 서비스 호출 결과: [{result.success}] {result.message}")
+    except KeyboardInterrupt:
+        print(" <--- ✅ 사용자 입력으로 인한 프로그램 종료")
+    finally:
+        base_node.destroy_node()
+        rclpy.try_shutdown()
+    
+
+if __name__ == "__main__":
+    main()
+```
+
+<details>
+
+<summary>코드 설명</summary>
+이번에는 답장이 오기를 기대하는 메세지를 주는 입장이다다. 그래서서 노드 이름을 `send_data_and_answer_node`으로 지정한다.  
+
+이전에 메세지를 보낼 때는 타이머를 사용해서 데이터를 주기적으로 전송했다. 하지만 이번에는 답장이 올 때 까지 대기해야 하므로 타이머를 사용하지 않는다. 왜냐하면 상대방이 답장을 보낼 때 까지 얼마의 시간이 걸릴 지 알 수 없기 때문이다.  
+
+이 때문에 `main` 함수 내부가 변한다. 기존에는 `rclpy.spin`을 통해서 무한히 반복을 하였다. 하지만 이번에는 딱 한 번만 수행하도록 수정해야 한다.  
+
+먼저 초기화 `__init__` 부분을 보자. 메시지를 보낼 때와 마찬가지로 메시지 타입 및 그 제목을 지정 해 준다. 그런데 추가적으로 그 뒤에 `wait_for_service`를 사용하는 것을 볼 수 있다. 이는, 기존에는 그냥 메시지를 보내면 상대방이 실제로 메시지를 받든 말든 상관을 할 필요가 없었다. 하지만 이번에는 우리는 꼭 답장을 받아야 한다. 그러므로 상대방이 답장을 받을 준비가 되었는지 여부를 확인하는 과정이 필요 한 것이다. 다음과 같은 요소가 나와 있다면 해당 부분을 지나서 정상적으로 초기화가 된다.
+
+```bash
+retia@localhost:~/practice_ws/src/practice_ros$ ros2 service list
+/send_data_and_answer
+```
+
+만약 준비가 되지 않았다면 계속 기다린다.
+```bash
+retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 04_send_data_and_answer.py 
+[INFO] [1745596740.109029372] [send_data_and_answer_node]: 🔄 서비스 준비 중...
+[INFO] [1745596735.264405273] [send_data_and_answer_node]: 🔄 서비스 준비 중...
+[INFO] [1745596736.266325297] [send_data_and_answer_node]: 🔄 서비스 준비 중...
+```
+
+그 다음으로 `send_msg` 함수를 보자. 기존 메시지를 보내는 함수와 유사한 것을 볼 수 있다. 먼저 보낼 메시지의 형식을 선언하고, (이곳에서는 넣지는 않았지만) 전송할 데이터를 삽입한다. 그리고 `self.service_client`에 넣어서 대상에게 메시지를 보내면 된다. 이때 반환값인 `self.future`의 경우 답장을 받을 장소이므로 꼭 저장을 해 둬야 한다.  
+
+이번에는 `main` 함수를 보자. 해당 코드에서 `rclpy.spin_until_future_complete`는 답장이 올 때 까지 `rclpy.spin()`을 반복하는 함수다. 다만 차이점은 답장이 오면 해당 반복을 종료한다는 점 이다.  
+
+답장의 결과는 우리가 답장을 받을 장소인 `self.future.result()`로 얻을 수 있다. 그리고 그 내부에 해당 답장의 내용물인 `result.success`와 `result.messgae`를 log로 출력해 주고 종료를 해 준다. 보내는 곳과 받는 곳 모두 정상적으로 작동함을 확인할 수 있다.
+
+```bash
+retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 03_recieve_data_and_answer.py 
+[INFO] [1745596752.530636544] [send_data_and_answer_node]: ✅ 초기화 성공!!
+[INFO] [1745596824.700190993] [send_data_and_answer_node]: 🖨️ 서비스 작업 시작!!
+[INFO] [1745596824.700458831] [send_data_and_answer_node]: 📄 서비스 작업 중... (1/3)
+[INFO] [1745596825.201478143] [send_data_and_answer_node]: 📄 서비스 작업 중... (2/3)
+[INFO] [1745596825.702530814] [send_data_and_answer_node]: 📄 서비스 작업 중... (3/3)
+[INFO] [1745596825.702890031] [send_data_and_answer_node]: 📨 서비스 작업 완료!!
+```
+
+```bash
+retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 04_send_data_and_answer.py 
+[INFO] [1745596848.847738634] [send_data_and_answer_node]: ✅ 초기화 성공!!
+[INFO] [1745596849.851751046] [send_data_and_answer_node]: 📨 서비스 호출 결과: [True] 서비스 작업 완료!!
+```
+</details>
+
+
+
+## 05.
 
 [Send Message Code](01_send_data_code.py)
 
@@ -299,11 +485,39 @@ retia@localhost:~/practice_ws/src/practice_ros/01_Send_Messages$ python3 02_rece
 
 
 
+## 06.
+
+[Send Message Code](01_send_data_code.py)
+
+```python
+
+```
+
+<details>
+
+<summary>코드 설명</summary>
+
+</details>
+
+
+## 07.
+
+[Send Message Code](01_send_data_code.py)
+
+```python
+
+```
+
+<details>
+
+<summary>코드 설명</summary>
+
+</details>
 
 
 
 
-## 04.
+## 08.
 
 [Send Message Code](01_send_data_code.py)
 
