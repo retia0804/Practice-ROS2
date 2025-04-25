@@ -20,8 +20,6 @@ def main():
         base_node.destroy_node()
         rclpy.try_shutdown()
     
-    input()
-    
 
 if __name__ == "__main__":
     main()
